@@ -29,4 +29,9 @@ go.work.sum
 
 # Editor/IDE
 # .idea/
-# .vscode/
+.vscode/
+
+# bin logs config 目录
+logs/
+config/
+bin/
