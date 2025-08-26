@@ -13,19 +13,19 @@ import (
 
 type Orchestrator interface {
 	Run(ctx context.Context, msg Msg, sender Sender) error
-	Cancel(id string) 
+	Cancel(id string)
 }
 
 type Sender interface {
 	Send(v any) error
 }
 
-type wsSender struct {
+type WsSender struct {
 	c  *websocket.Conn
 	mu sync.Mutex
 }
 
-func (s *wsSender) Send(v any) error {
+func (s *WsSender) Send(v any) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.c.WriteJSON(v)
@@ -51,13 +51,16 @@ func Serve(addr string, orch Orchestrator) error {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Query().Get("token") == "" {
-			http.Error(w, "missing token", http.StatusUnauthorized); return
+			http.Error(w, "missing token", http.StatusUnauthorized)
+			return
 		}
 		conn, err := Upgrader.Upgrade(w, r, nil)
-		if err != nil { return }
+		if err != nil {
+			return
+		}
 		defer conn.Close()
 
-		sender := &wsSender{c: conn}
+		sender := &WsSender{c: conn}
 
 		// 心跳
 		go func() {
@@ -72,9 +75,13 @@ func Serve(addr string, orch Orchestrator) error {
 
 		for {
 			_, data, err := conn.ReadMessage()
-			if err != nil { return }
+			if err != nil {
+				return
+			}
 			var msg Msg
-			if err := json.Unmarshal(data, &msg); err != nil { continue }
+			if err := json.Unmarshal(data, &msg); err != nil {
+				continue
+			}
 
 			switch msg.Type {
 			case "agent/run":
@@ -86,7 +93,7 @@ func Serve(addr string, orch Orchestrator) error {
 				}(msg)
 			case "agent/cancel":
 				orch.Cancel(msg.ID)
-			// 也可以扩展 tools/call 等其它 type
+				// 也可以扩展 tools/call 等其它 type
 			}
 		}
 	})
@@ -98,7 +105,7 @@ func InitHandlerMap() map[string]http.HandlerFunc {
 	handlerMap := make(map[string]http.HandlerFunc)
 
 	// handlerMap["/test"] = wsHandler
-	
+
 	return handlerMap
 }
 

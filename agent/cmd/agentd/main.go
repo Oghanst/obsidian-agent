@@ -13,7 +13,7 @@ import (
 
 var mainLogger *logger.Logger
 
-func main(){
+func main() {
 	property.LoadConfig("/Users/jianghaojun/Projects/obsidian-agent/agent/config/config.json")
 	config := property.GetConfig()
 	agentLogger, err := logger.New(config.LogDir + "/agent.log")
@@ -24,18 +24,18 @@ func main(){
 	TestWsServer()
 }
 
+
 func TestWsServer() {
 	config := property.GetConfig()
 	llm := client.NewDeepSeekClient(config.Apikey)
 	llm.SetSystemPrompt(`You are an Obsidian writing companion. Be concise, helpful.`)
-	orch := orchestrator.New(llm)
+	orch := orchestrator.BuildMsgOrchestrator(llm)
 	mainLogger.Info("Starting WebSocket server on %s", config.ServerAddr)
 	if err := transport.Serve(config.ServerAddr, orch); err != nil {
 		mainLogger.Error("Failed to start WebSocket server: %v", err)
 	}
 	select {}
 }
-
 
 func TestDeepSeekClient() {
 	config := property.GetConfig()
@@ -44,7 +44,7 @@ func TestDeepSeekClient() {
 	resp, err := deepseekClient.Client.CreateChatCompletion(
 		context.Background(),
 		openai.ChatCompletionRequest{
-			Model: "deepseek-chat", 
+			Model: "deepseek-chat",
 			Messages: []openai.ChatCompletionMessage{
 				{
 					Role:    openai.ChatMessageRoleUser,

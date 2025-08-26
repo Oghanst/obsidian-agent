@@ -11,20 +11,20 @@ import (
 	"github.com/obsidian-agent/internal/transport"
 )
 
-type Orchestrator struct {
-	llm     *client.DeepSeekClient
+type MsgOrchestrator struct {
+	llm     client.BaseClient
 	mu      sync.Mutex
 	cancels map[string]context.CancelFunc
 }
 
-func New(llm *client.DeepSeekClient) *Orchestrator {
-	return &Orchestrator{
+func BuildMsgOrchestrator(llm client.BaseClient) *MsgOrchestrator {
+	return &MsgOrchestrator{
 		llm:     llm,
 		cancels: make(map[string]context.CancelFunc),
 	}
 }
 
-func (o *Orchestrator) Cancel(id string) {
+func (o *MsgOrchestrator) Cancel(id string) {
 	o.mu.Lock()
 	if c, ok := o.cancels[id]; ok {
 		c()
@@ -33,10 +33,12 @@ func (o *Orchestrator) Cancel(id string) {
 	o.mu.Unlock()
 }
 
-func (o *Orchestrator) Run(ctx context.Context, req transport.Msg, sink transport.Sender) error {
+func (o *MsgOrchestrator) Run(ctx context.Context, req transport.Msg, sink transport.Sender) error {
 	// 记录 cancel
 	ctx, cancel := context.WithTimeout(ctx, 90*time.Second)
-	o.mu.Lock(); o.cancels[req.ID] = cancel; o.mu.Unlock()
+	o.mu.Lock()
+	o.cancels[req.ID] = cancel
+	o.mu.Unlock()
 	defer func() { o.Cancel(req.ID) }()
 
 	// 构建 messages：system + 历史 + 本轮 user
