@@ -11,11 +11,13 @@ const (
 	DefaultLogDir = "/Users/jianghaojun/Projects/obsidian-agent/agent/logs"
 	// DefaultApikey is the default API key for the agent.
 	DefaultApikey = "sk-1234567890abcdef1234567890abcdef"
+	DefaultLocalServerAddr = "127.0.0.1:8787"
 )
 
 type Config struct {
 	LogDir string `json:"log_dir"`
 	Apikey string `json:"apikey"`
+	ServerAddr string `json:"server_addr"`
 }
 
 var currentConfig *Config
@@ -30,6 +32,7 @@ func LoadDefaultConfig(){
 	currentConfig = &Config{
 		LogDir: DefaultLogDir,
 		Apikey: DefaultApikey,
+		ServerAddr: DefaultLocalServerAddr,
 	}
 }
 
@@ -57,6 +60,9 @@ func LoadConfig(filePath string) error {
 	}
 	if config.Apikey == "" {
 		config.Apikey = DefaultApikey
+	}
+	if config.ServerAddr == "" {
+		config.ServerAddr = DefaultLocalServerAddr
 	}
 	currentConfig = &config
 	return nil
