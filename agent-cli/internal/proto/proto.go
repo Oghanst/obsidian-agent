@@ -1,4 +1,4 @@
-package transport
+package proto
 
 type ChatMessage struct {
 	Role    string `json:"role"`

@@ -20,8 +20,7 @@ type DeepSeekClient struct {
 	HistorySizeLimit int
 
 	systemPrompt string
-	historyPool  []openai.ChatCompletionMessage // 只放 user/assistant 历史
-	historySize  int                            // 粗略按字符数累计
+	messagePool  []openai.ChatCompletionMessage // user/assistant 的缓冲池
 }
 
 func NewDeepSeekClient(apiKey string) *DeepSeekClient {
@@ -40,11 +39,10 @@ func (d *DeepSeekClient) GetClient() *openai.Client { return d.Client }
 func (d *DeepSeekClient) SetSystemPrompt(p string)  { d.systemPrompt = p }
 func (d *DeepSeekClient) GetSystemPrompt() string   { return d.systemPrompt }
 
-// ---- 会话历史管理（轻量，按字符粗算预算） ----
+// ---- 会话管理 ----
 
-func (d *DeepSeekClient) ResetHistory() {
-	d.historyPool = nil
-	d.historySize = 0
+func (d *DeepSeekClient) ResetMessages() {
+	d.messagePool = nil
 }
 
 func (d *DeepSeekClient) AppendUser(content string) {
@@ -57,15 +55,8 @@ func (d *DeepSeekClient) AppendAssistant(content string) {
 
 func (d *DeepSeekClient) append(role, content string) {
 	msg := openai.ChatCompletionMessage{Role: role, Content: content}
-	d.historyPool = append(d.historyPool, msg)
-	d.historySize += len([]rune(content))
+	d.messagePool = append(d.messagePool, msg)
 
-	// 简单从最老开始裁剪；后续可换成 token 精确裁剪
-	for d.historySize > d.HistorySizeLimit && len(d.historyPool) > 1 {
-		removed := d.historyPool[0]
-		d.historyPool = d.historyPool[1:]
-		d.historySize -= len([]rune(removed.Content))
-	}
 }
 
 // BuildMessages 组装 system + 历史 + 本轮用户输入
@@ -77,7 +68,7 @@ func (d *DeepSeekClient) BuildMessages(userPrompt string, extra ...openai.ChatCo
 			Content: d.systemPrompt,
 		})
 	}
-	msgs = append(msgs, d.historyPool...)
+	msgs = append(msgs, d.messagePool...)
 	if userPrompt != "" {
 		msgs = append(msgs, openai.ChatCompletionMessage{
 			Role:    openai.ChatMessageRoleUser,
