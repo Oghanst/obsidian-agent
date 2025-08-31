@@ -71,7 +71,7 @@ func Run(cfg *property.Config) {
 		msgs = append(msgs, proto.ChatMessage{Role: "user", Content: line})
 
 		reqID := "run-" + utils.RandID()
-		req := proto.Msg{
+		req := proto.MsgRequest{
 			Type:       "agent/run",
 			ID:         reqID,
 			Intent:     cfg.Intent,
@@ -99,11 +99,11 @@ func Run(cfg *property.Config) {
 			for {
 				select {
 				case <-ctx.Done():
-					_ = cli.SendJSON(proto.Msg{Type: "agent/cancel", ID: reqID})
+					_ = cli.SendJSON(proto.MsgRequest{Type: "agent/cancel", ID: reqID})
 					return
 				default:
 				}
-				var m proto.Msg
+				var m proto.MsgResponse
 				if err := cli.ReadOne(&m); err != nil {
 					return
 				}

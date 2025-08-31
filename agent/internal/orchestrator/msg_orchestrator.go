@@ -7,8 +7,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/obsidian-agent/internal/llm/client"
-	"github.com/obsidian-agent/internal/transport"
+	"github.com/obsidian-agent/pkg/llm/client"
+	"github.com/obsidian-agent/biz/transport"
 )
 
 type MsgOrchestrator struct {
@@ -33,7 +33,7 @@ func (o *MsgOrchestrator) Cancel(id string) {
 	o.mu.Unlock()
 }
 
-func (o *MsgOrchestrator) Run(ctx context.Context, req transport.Msg, sink transport.Sender) error {
+func (o *MsgOrchestrator) Run(ctx context.Context, req transport.MsgRequest, sink transport.Sender) error {
 	// 记录 cancel
 	ctx, cancel := context.WithTimeout(ctx, 90*time.Second)
 	o.mu.Lock()
@@ -61,7 +61,7 @@ func (o *MsgOrchestrator) Run(ctx context.Context, req transport.Msg, sink trans
 			// 条件一：遇到句子终止符
 			if i := strings.IndexAny(previewBuf.String(), "。.!?"); i >= 0 {
 				text := previewBuf.String()[:i+1]
-				_ = sink.Send(transport.Msg{Type: "agent/preview.delta", ID: req.ID, Seq: 1, Text: text})
+				_ = sink.Send(transport.MsgResponse{Type: "agent/preview.delta", ID: req.ID, Seq: 1, Text: text})
 				previewSent = true
 			}
 		}
@@ -69,14 +69,14 @@ func (o *MsgOrchestrator) Run(ctx context.Context, req transport.Msg, sink trans
 		select {
 		case <-previewDeadline.C:
 			if !previewSent && previewBuf.Len() > 0 {
-				_ = sink.Send(transport.Msg{Type: "agent/preview.delta", ID: req.ID, Seq: 1, Text: previewBuf.String()})
+				_ = sink.Send(transport.MsgResponse{Type: "agent/preview.delta", ID: req.ID, Seq: 1, Text: previewBuf.String()})
 				previewSent = true
 			}
 		default:
 		}
 
 		// 全量永远流
-		_ = sink.Send(transport.Msg{Type: "agent/full.delta", ID: req.ID, Seq: seq, Text: delta})
+		_ = sink.Send(transport.MsgResponse{Type: "agent/full.delta", ID: req.ID, Seq: seq, Text: delta})
 		return nil
 	}
 
@@ -87,10 +87,10 @@ func (o *MsgOrchestrator) Run(ctx context.Context, req transport.Msg, sink trans
 	}, onDelta)
 
 	if err != nil {
-		_ = sink.Send(transport.Msg{Type: "agent/error", ID: req.ID, ErrorCode: "LLM_ERROR", ErrorMsg: err.Error()})
+		_ = sink.Send(transport.MsgResponse{Type: "agent/error", ID: req.ID, ErrorCode: "LLM_ERROR", ErrorMsg: err.Error()})
 		return err
 	}
 
-	_ = sink.Send(transport.Msg{Type: "agent/done", ID: req.ID})
+	_ = sink.Send(transport.MsgResponse{Type: "agent/done", ID: req.ID})
 	return nil
 }

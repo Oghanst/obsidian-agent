@@ -4,8 +4,8 @@ import (
 	"net/http"
 
 	"github.com/gorilla/websocket"
-	"github.com/obsidian-agent/internal/logger"
-	"github.com/obsidian-agent/internal/transport"
+	"github.com/obsidian-agent/pkg/logger"
+	"github.com/obsidian-agent/biz/transport"
 )
 
 var testLogger *logger.Logger

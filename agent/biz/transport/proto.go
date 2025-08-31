@@ -1,4 +1,4 @@
-package proto
+package transport
 
 // ChatMessage 表示一条对话消息
 type ChatMessage struct {

@@ -3,11 +3,11 @@ package main
 import (
 	"context"
 
-	"github.com/obsidian-agent/internal/llm/client"
-	"github.com/obsidian-agent/internal/logger"
+	"github.com/obsidian-agent/biz/transport"
 	"github.com/obsidian-agent/internal/orchestrator"
-	"github.com/obsidian-agent/internal/property"
-	"github.com/obsidian-agent/internal/transport"
+	"github.com/obsidian-agent/pkg/logger"
+	"github.com/obsidian-agent/pkg/llm/client"
+	"github.com/obsidian-agent/pkg/property"
 	"github.com/sashabaranov/go-openai"
 )
 

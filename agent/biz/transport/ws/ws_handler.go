@@ -3,7 +3,7 @@ package ws
 import (
 	"net/http"
 
-	"github.com/obsidian-agent/internal/transport"
+	"github.com/obsidian-agent/biz/transport"
 )
 
 func wsHandler(w http.ResponseWriter, r *http.Request) {

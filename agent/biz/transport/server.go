@@ -8,11 +8,11 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/obsidian-agent/internal/logger"
+	"github.com/obsidian-agent/pkg/logger"
 )
 
 type Orchestrator interface {
-	Run(ctx context.Context, msg Msg, sender Sender) error
+	Run(ctx context.Context, msg MsgRequest, sender Sender) error
 	Cancel(id string)
 }
 
@@ -78,7 +78,7 @@ func Serve(addr string, orch Orchestrator) error {
 			if err != nil {
 				return
 			}
-			var msg Msg
+			var msg MsgRequest
 			if err := json.Unmarshal(data, &msg); err != nil {
 				continue
 			}
@@ -86,7 +86,7 @@ func Serve(addr string, orch Orchestrator) error {
 			switch msg.Type {
 			case "agent/run":
 				// 为每个 run 开 goroutine
-				go func(m Msg) {
+				go func(m MsgRequest) {
 					ctx, cancel := context.WithCancel(context.Background())
 					defer cancel()
 					_ = orch.Run(ctx, m, sender)

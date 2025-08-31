@@ -41,7 +41,7 @@ func (w *WSClient) SendJSON(v any) error {
 	return w.conn.WriteJSON(v)
 }
 
-func (w *WSClient) ReadOne(msg *proto.Msg) error {
+func (w *WSClient) ReadOne(msg *proto.MsgResponse) error {
 	_, data, err := w.conn.ReadMessage()
 	if err != nil {
 		return err
