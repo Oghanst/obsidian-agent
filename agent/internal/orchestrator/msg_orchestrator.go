@@ -7,8 +7,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/obsidian-agent/pkg/llm/client"
 	"github.com/obsidian-agent/biz/transport"
+	"github.com/obsidian-agent/pkg/llm/client"
+	"github.com/sashabaranov/go-openai"
 )
 
 type MsgOrchestrator struct {
@@ -42,7 +43,10 @@ func (o *MsgOrchestrator) Run(ctx context.Context, req transport.MsgRequest, sin
 	defer func() { o.Cancel(req.ID) }()
 
 	// 构建 messages：system + 历史 + 本轮 user
-	messages := o.llm.BuildMessages(req.Question)
+	messages := o.llm.BuildMessages([]openai.ChatCompletionMessage{{
+		Role:    openai.ChatMessageRoleUser,
+		Content: req.Question,
+	}})
 
 	// 预览策略：首句/首段只发一次
 	previewSent := false
@@ -81,7 +85,7 @@ func (o *MsgOrchestrator) Run(ctx context.Context, req transport.MsgRequest, sin
 	}
 
 	// 调用 LLM（流式）
-	_, err := o.llm.StreamChatCompletion(ctx, messages, &client.StreamOptions{
+	_, err := o.llm.StreamChatCompletion(ctx, messages, &client.ChatOptions{
 		Temperature: 0.3,
 		MaxTokens:   800,
 	}, onDelta)
